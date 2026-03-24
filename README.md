@@ -77,19 +77,19 @@ This is where it gets interesting. You can list and extract individual files fro
 
 ```bash
 # List all files inside the 58.7 GB client archive
-wows-download extract client "*.dspkg" --list
+wows-download extract client --list
 
 # Extract a single file
-wows-download extract client "*.dspkg" WorldOfWarships.exe -d out/
+wows-download extract client WorldOfWarships.exe -d out/
 
 # Extract files matching a glob
-wows-download extract locale "*.dspkg" --filter "*/res/texts/en/**" -d out/
+wows-download extract locale --filter "*/res/texts/en/**" -d out/
 
 # Extract system_data.idx (31 KB from a 58.7 GB archive)
-wows-download extract client "*.dspkg" "bin/12116141/idx/system_data.idx" -d out/
+wows-download extract client "bin/12116141/idx/system_data.idx" -d out/
 
 # Extract all DLLs
-wows-download extract client "*.dspkg" --filter "*.dll" -d out/
+wows-download extract client --filter "*.dll" -d out/
 ```
 
 Example output:

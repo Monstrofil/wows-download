@@ -142,17 +142,10 @@ def cmd_extract(args):
         print(f"Available parts: {', '.join(manifest['patches'].keys())}", file=sys.stderr)
         sys.exit(1)
 
-    archive_pattern = args.archive
-    match = None
-    for f in part["files"]:
-        if fnmatch.fnmatch(f["basename"], archive_pattern) or f["basename"] == archive_pattern or f["name"] == archive_pattern:
-            match = f
-            break
-    if not match:
-        print(f"Error: no archive matching '{archive_pattern}' in part '{part_name}'.", file=sys.stderr)
-        for f in part["files"]:
-            print(f"  {f['basename']}", file=sys.stderr)
+    if not part["files"]:
+        print(f"Error: no files in part '{part_name}'.", file=sys.stderr)
         sys.exit(1)
+    match = part["files"][0]
 
     url = match["downloadUrl"]
     if not url:
@@ -249,7 +242,6 @@ def main():
     # extract
     p_ext = sub.add_parser("extract", help="Extract files from a remote .dspkg archive (no full download needed)")
     p_ext.add_argument("part", help="Part name (e.g. client, locale)")
-    p_ext.add_argument("archive", help="Archive filename or glob (e.g. *.dspkg)")
     p_ext.add_argument("paths", nargs="*", help="Specific file paths to extract (supports globs)")
     p_ext.add_argument("-d", "--dir", default=".", help="Output directory (default: current dir)")
     p_ext.add_argument("--list", action="store_true", help="Only list files in the archive, don't extract")
