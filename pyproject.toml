@@ -3,9 +3,9 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "wows-download"
-version = "0.1.0"
-description = "Download and extract World of Warships game files from the WGC API"
+name = "wgc-download"
+version = "0.2.0"
+description = "Download and extract Wargaming game files (WoWS, WoT, WoTB, WoWP) from the WGC API"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
@@ -14,10 +14,10 @@ dependencies = [
 ]
 
 [project.scripts]
-wows-download = "wows_download.cli:main"
+wgc-download = "wgc_download.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/Monstrofil/wows-download"
+Homepage = "https://github.com/Monstrofil/wgc-download"
 
 [tool.setuptools.packages.find]
 where = ["src"]

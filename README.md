@@ -1,25 +1,22 @@
-# wows-download
+# wgc-download
 
-CLI tool to list, download, and selectively extract World of Warships game files from the Wargaming Game Center (WGC) CDN.
+CLI tool to list, download, and selectively extract game files from the Wargaming Game Center (WGC) CDN.
+
+Supports all games available through WGC: **World of Tanks**, **World of Warships**, **WoT Blitz**, **World of Warplanes**, and others.
 
 The key feature is **remote partial extraction** — you can pull individual files out of a 58 GB archive by downloading only the bytes you need, using HTTP range requests against the CDN.
 
 ## How it works
 
-WoWS distributes updates as `.dspkg` archives (7z format) split into *parts*: `client`, `locale`, `sdcontent`, `hotfix`. Each part contains one archive.
+Wargaming distributes updates as `.dspkg` archives (7z format) split into *parts*: `client`, `locale`, `sdcontent`, `hotfix`. Each part contains one archive.
 
 This tool:
 
-1. Queries the WGC API to discover available versions and download URLs
-2. Parses 7z archive headers remotely via HTTP range requests (~512 KB to index any archive regardless of size)
-3. Fetches only the compressed streams for files you request
-4. Decompresses locally (LZMA2, BCJ+LZMA2)
-
-| Archive | Full size | Index cost |
-|---------|-----------|------------|
-| locale | 67 MB | 512 KB |
-| sdcontent | 19.3 GB | 512 KB |
-| client | 58.7 GB | 512 KB |
+1. Queries the WGC showroom API to discover all available games and their update servers
+2. Fetches version metadata and patch chains for the selected game
+3. Parses 7z archive headers remotely via HTTP range requests (~512 KB to index any archive)
+4. Fetches only the compressed streams for files you request
+5. Decompresses locally (LZMA2, BCJ+LZMA2)
 
 ## Install
 
@@ -30,66 +27,64 @@ pip install .
 Or run directly:
 
 ```
-python wows.py <command>
+python wgc.py <command>
 ```
 
 Requires Python 3.10+ and [py7zr](https://pypi.org/project/py7zr/) (installed automatically).
 
 ## Usage
 
-### List available versions and parts
+### List available games
 
 ```bash
-# Overview — latest version, all parts with sizes
-wows-download list
-
-# Files in a specific part
-wows-download list --files locale
+wgc-download games
 ```
 
 ```
-Game:              WOWS.WW.PRODUCTION
-Latest version:    15.2.0.0.12116141
+Available games:
 
-Parts (4):
+  WOT.EU.PRODUCTION         World of Tanks            Europe
+  WOT.NA.PRODUCTION         World of Tanks            North America
+  WOT.ASIA.PRODUCTION       World of Tanks            Asia
+  WOWS.WW.PRODUCTION        World of Warships         World of Warships
+  WOWS.PT.PRODUCTION        World of Warships         World of Warships Public Test
+  WOTB.WW.PRODUCTION        WoT Blitz                 Worldwide
+  WOWP.WW.PRODUCTION        World of Warplanes        Worldwide
+  HEAT.WW.PRODUCTION        Heat                      None
+```
 
-  client                 1 file(s)      58.7 GB
-  locale                 1 file(s)      66.9 MB
-  sdcontent              1 file(s)      19.3 GB
-  hotfix                 1 file(s)        181 B
+### List versions and parts
+
+```bash
+wgc-download list WOWS.WW.PRODUCTION
+wgc-download list WOT.EU.PRODUCTION
+wgc-download list WOT.EU.PRODUCTION --files client
 ```
 
 ### Download a full .dspkg
 
 ```bash
-# Download a specific file
-wows-download download locale wows.ww_15.2.0.0.12116141_locale.dspkg
-
-# Download all files in a part
-wows-download download locale --all -d downloads/
+wgc-download download WOWS.WW.PRODUCTION locale --all -d downloads/
 ```
 
 Skips files that are already downloaded with the correct size. Uses atomic writes (`.part` + rename).
 
 ### Extract files from a remote archive (no full download)
 
-This is where it gets interesting. You can list and extract individual files from a remote `.dspkg` without downloading the entire archive:
+List and extract individual files from a remote `.dspkg` without downloading the entire archive:
 
 ```bash
-# List all files inside the 58.7 GB client archive
-wows-download extract client --list
+# List all files inside the client archive
+wgc-download extract WOWS.WW.PRODUCTION client --list
 
 # Extract a single file
-wows-download extract client WorldOfWarships.exe -d out/
+wgc-download extract WOWS.WW.PRODUCTION client WorldOfWarships.exe -d out/
 
 # Extract files matching a glob
-wows-download extract locale --filter "*/res/texts/en/**" -d out/
+wgc-download extract WOWS.WW.PRODUCTION locale --filter "*/res/texts/en/**" -d out/
 
-# Extract system_data.idx (31 KB from a 58.7 GB archive)
-wows-download extract client "bin/12116141/idx/system_data.idx" -d out/
-
-# Extract all DLLs
-wows-download extract client --filter "*.dll" -d out/
+# Works with any game
+wgc-download extract WOT.EU.PRODUCTION client --list
 ```
 
 Example output:

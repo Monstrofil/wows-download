@@ -1,4 +1,4 @@
-"""CLI entry point for wows-download."""
+"""CLI entry point for wgc-download."""
 
 import argparse
 import fnmatch
@@ -6,7 +6,7 @@ import os
 import sys
 import urllib.request
 
-from .api import GUID, USER_AGENT, get_manifest
+from .api import USER_AGENT, fetch_showroom, get_manifest, resolve_game
 from .remote7z import RemoteFile, decompress_entry, parse_archive_index
 
 
@@ -20,10 +20,23 @@ def fmt_size(n: int) -> str:
     return f"{n:.1f} TB"
 
 
+def _get_game_and_manifest(args):
+    game = resolve_game(args.game)
+    manifest = get_manifest(game["api_base"], game["app_id"])
+    return game, manifest
+
+
 # ── Commands ──────────────────────────────────────────────────────────────────
 
+def cmd_games(args):
+    games = fetch_showroom()
+    print("Available games:\n")
+    for g in games:
+        print(f"  {g['app_id']:<25} {g['game_name']:<25} {g['region_name']}")
+
+
 def cmd_list(args):
-    manifest = get_manifest()
+    game, manifest = _get_game_and_manifest(args)
 
     if args.files:
         part_name = args.files
@@ -40,7 +53,7 @@ def cmd_list(args):
             print(f"  {f['basename']:<50} {fmt_size(f['size']):>10}  (unpacked: {fmt_size(f['unpackedSize'])})")
         return
 
-    print(f"Game:              {GUID}")
+    print(f"Game:              {game['app_id']}  ({game['game_name']} — {game['region_name']})")
     print(f"Latest version:    {manifest['latestVersion']}")
     print(f"Metadata version:  {manifest['metadataVersion']}")
     print(f"Chain ID:          {manifest['chainId']}")
@@ -51,11 +64,11 @@ def cmd_list(args):
         print(f"  {name:<20} {len(part['files']):>3} file(s)   {fmt_size(total_size):>10}   [{part['versionFrom']} -> {part['versionTo']}]")
 
     if not args.parts:
-        print(f"\nUse 'list --files <part>' to see individual files.")
+        print(f"\nUse 'list {game['app_id']} --files <part>' to see individual files.")
 
 
 def cmd_download(args):
-    manifest = get_manifest()
+    game, manifest = _get_game_and_manifest(args)
 
     part_name = args.part
     part = manifest["patches"].get(part_name)
@@ -133,7 +146,7 @@ def _download_file(file_info: dict, target: str):
 
 
 def cmd_extract(args):
-    manifest = get_manifest()
+    game, manifest = _get_game_and_manifest(args)
 
     part_name = args.part
     part = manifest["patches"].get(part_name)
@@ -221,18 +234,23 @@ def cmd_extract(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        prog="wows-download",
-        description="WoWS Download Tool — list versions and download game files from WGC API",
+        prog="wgc-download",
+        description="WGC Download Tool — list versions and download game files from Wargaming Game Center API",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
+    # games
+    sub.add_parser("games", help="List all available games")
+
     # list
     p_list = sub.add_parser("list", help="List available versions, parts, and files")
+    p_list.add_argument("game", help="Game ID (e.g. WOWS.WW.PRODUCTION, WOT.EU.PRODUCTION)")
     p_list.add_argument("--parts", action="store_true", help="Show all parts (default overview already includes them)")
     p_list.add_argument("--files", metavar="PART", help="Show files in a specific part")
 
     # download
     p_dl = sub.add_parser("download", help="Download file(s) from a part")
+    p_dl.add_argument("game", help="Game ID (e.g. WOWS.WW.PRODUCTION)")
     p_dl.add_argument("part", help="Part name (e.g. hotfix, client, locale)")
     p_dl.add_argument("filename", nargs="?", help="File to download (basename or full name)")
     p_dl.add_argument("-o", "--output", help="Output path (default: basename)")
@@ -241,6 +259,7 @@ def main():
 
     # extract
     p_ext = sub.add_parser("extract", help="Extract files from a remote .dspkg archive (no full download needed)")
+    p_ext.add_argument("game", help="Game ID (e.g. WOWS.WW.PRODUCTION)")
     p_ext.add_argument("part", help="Part name (e.g. client, locale)")
     p_ext.add_argument("paths", nargs="*", help="Specific file paths to extract (supports globs)")
     p_ext.add_argument("-d", "--dir", default=".", help="Output directory (default: current dir)")
@@ -249,7 +268,9 @@ def main():
 
     args = parser.parse_args()
 
-    if args.command == "list":
+    if args.command == "games":
+        cmd_games(args)
+    elif args.command == "list":
         cmd_list(args)
     elif args.command == "download":
         cmd_download(args)
