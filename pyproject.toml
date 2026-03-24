@@ -17,7 +17,7 @@ dependencies = [
 wows-download = "wows_download.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/example/wows-download"
+Homepage = "https://github.com/Monstrofil/wows-download"
 
 [tool.setuptools.packages.find]
 where = ["src"]
