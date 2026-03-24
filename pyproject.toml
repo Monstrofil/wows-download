@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wows-download"
+version = "0.1.0"
+description = "Download and extract World of Warships game files from the WGC API"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = [
+    "py7zr>=1.0",
+]
+
+[project.scripts]
+wows-download = "wows_download.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/example/wows-download"
+
+[tool.setuptools.packages.find]
+where = ["src"]
